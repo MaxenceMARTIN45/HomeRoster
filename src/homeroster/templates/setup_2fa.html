@@ -1,0 +1,24 @@
+{% extends "auth_base.html" %}
+{% from "_ui.html" import icon %}
+{% block title %}{{ t('setup.totp_title') }}{% endblock %}
+{% block card %}
+<div class="card">
+  <h1>{{ t('setup.totp_title') }}</h1>
+  <p class="lead">{{ t('setup.totp_lead') }}</p>
+  <div class="qr-box mt-16">{{ qr|safe }}</div>
+  <details class="more">
+    <summary>{{ icon('key', 'sm') }}{{ t('setup.totp_manual') }}</summary>
+    <p class="secret">{{ secret }}</p>
+  </details>
+  {% if error %}<div class="flash error mt-16">{{ icon('alert') }}<span>{{ error }}</span></div>{% endif %}
+  <form method="post" class="mt-16">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="field">
+      <label for="code">{{ t('setup.totp_code') }}</label>
+      <input class="code-input" type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code"
+             pattern="[0-9]{6}" maxlength="6" required autofocus data-autosubmit>
+    </div>
+    <button class="btn primary lg block mt-16" type="submit">{{ icon('shield') }}{{ t('setup.totp_submit') }}</button>
+  </form>
+</div>
+{% endblock %}

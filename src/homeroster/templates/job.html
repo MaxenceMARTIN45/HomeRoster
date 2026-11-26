@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, avatar %}
+{% block title %}{{ t('jobs.title') }}{% endblock %}
+{% block content %}
+<div class="hero">
+  {% if person %}{{ avatar(person.display_name, None, 'xl') }}{% endif %}
+  <div class="meta">
+    <h1>{{ person.display_name if person else t('jobs.title') }}</h1>
+    <p class="muted" id="job-running"><span class="row"><span class="spinner"></span>{{ t('jobs.running') }}</span></p>
+    <p class="hidden" id="job-done"><span class="chip ok">{{ icon('check') }}{{ t('jobs.done') }}</span></p>
+    <p class="hidden" id="job-partial"><span class="chip warn">{{ icon('alert') }}{{ t('jobs.partial') }}</span></p>
+  </div>
+</div>
+
+<div class="grid two">
+  <div class="card hidden" id="job-qr">
+    <div class="card-head"><div><h2>{{ t('jobs.scan_now') }}</h2><p class="faint sub" id="job-qr-name"></p></div></div>
+    <div class="qr-box" id="job-qr-inline"><span class="spinner"></span></div>
+    <p class="muted small qr-caption">{{ t('qr.how_to_invite' if vpn.invite_only else 'qr.how_to', app=vpn.client_app) }}</p>
+    <div class="btn-row mt-12">
+      <button class="btn grow" type="button" id="job-qr-open">{{ icon('maximize') }}{{ t('qr.enlarge') }}</button>
+      <a class="btn grow" id="job-qr-download" href="#">{{ icon('download') }}{{ t('qr.download') }}</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>{{ t('jobs.steps') }}</h2></div>
+    <div class="steps" id="job" data-api="/api/jobs/{{ job.id }}">
+      {% for s in job.steps %}
+      <div class="step {{ s.status }}" data-step="{{ s.key }}">
+        <span class="bullet"></span>
+        <div><div class="label">{{ s.label }}</div><div class="msg">{{ s.message or t('js.pending') }}</div></div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="btn-row mt-16">
+      <a class="btn" href="#" data-person-link>{{ icon('users') }}{{ t('jobs.open_person') }}</a>
+      <a class="btn ghost" href="/people/new">{{ icon('user-plus') }}{{ t('jobs.create_another') }}</a>
+    </div>
+    <p class="hint mt-12">{{ t('jobs.retry_hint') }}</p>
+  </div>
+</div>
+{% endblock %}

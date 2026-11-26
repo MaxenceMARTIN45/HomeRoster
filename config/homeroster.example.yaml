@@ -1,0 +1,251 @@
+# =====================================================================================================
+#  HomeRoster configuration
+#
+#  Copy this file to config/homeroster.yaml and adapt it. Secrets never go here: reference them with
+#  ${VARIABLE} and put the values in .env (see .env.example). ${VARIABLE:-default} sets a fallback.
+#  Internal URLs are LAN addresses (IP or hostname + port), not the public ones.
+# =====================================================================================================
+
+homeroster:
+  owner: Alex                 # your first name, shown in the interface and in the e-mails
+  domain: example.com         # apps are reached at https://<app id>.<domain> unless "hostname" says otherwise
+  language: en                # default interface and e-mail language: en, fr, es, de, it, pt, ru, zh, hi, ar
+  # logo: /config/logo.png    # your homelab's logo in the e-mails (PNG or JPEG, square, put it next to this file)
+  default_device: phone       # name of the first VPN device created for a new person
+  sync_interval: 300          # seconds between two automatic access syncs
+  trusted_proxies:            # reverse proxy IPs allowed to set X-Real-IP (brute-force protection)
+    - 192.168.1.10
+  session:
+    idle_minutes: 30
+    max_hours: 12
+  # plugins: [my_package.my_connector]   # extra modules registering providers or connectors
+
+# ----------------------------------------------------------------------------------------------- VPN
+#  Pick ONE block (scripts/install.sh asks which one and keeps only that block).
+# >>> vpn: wgdashboard
+vpn:
+  provider: wgdashboard       # WireGuard managed by WGDashboard v4
+  url: http://192.168.1.11:10086
+  api_key: ${WG_API_KEY}      # WGDashboard > Settings > WGDashboard API Keys
+  interface: wg0
+  dns: 10.8.0.1               # DNS pushed to the devices
+  allowed_ips: 10.8.0.0/24    # what the devices route through the tunnel (split tunnel)
+  mtu: 1420
+  keepalive: 21
+# <<<
+# >>> vpn: wg-easy
+# vpn:
+#   provider: wg-easy         # WireGuard managed by wg-easy v15+
+#   url: http://192.168.1.11:51821
+#   username: ${WG_EASY_USERNAME}   # a wg-easy user without 2FA (HTTP Basic auth)
+#   password: ${WG_EASY_PASSWORD}
+#   # public_url: https://vpn.example.com   # if wg-easy runs behind a proxy with TRUSTED_PROXIES set
+#   # DNS, allowed IPs, MTU and keepalive are set in wg-easy: Admin panel > Config.
+# <<<
+# >>> vpn: wireguard
+# vpn:
+#   provider: wireguard       # plain WireGuard: HomeRoster edits wg0.conf (host watcher: scripts/host-watcher.sh)
+#   config_file: /wireguard/wg0.conf    # the host's /etc/wireguard, mounted on /wireguard (install.sh does it)
+#   endpoint: vpn.example.com:51820     # public address of the server, written in the client files
+#   dns: 10.8.0.1
+#   # allowed_ips: 10.8.0.0/24          # default: the VPN subnet (split tunnel)
+# <<<
+# >>> vpn: pivpn
+# vpn:
+#   provider: pivpn           # PiVPN (WireGuard): same as above, in PiVPN's layout (pivpn -l keeps working)
+#   config_file: /wireguard/wg0.conf
+#   endpoint: vpn.example.com:51820
+#   dns: 10.8.0.1
+# <<<
+# >>> vpn: tailscale
+# vpn:
+#   provider: tailscale       # people are invited by e-mail and sign in with their own account
+#   api_key: ${TAILSCALE_API_KEY}   # admin console > Settings > Keys > API access token
+#   # tailnet: example.com         # default "-": the tailnet of the key
+# <<<
+# >>> vpn: headscale
+# vpn:
+#   provider: headscale       # one Headscale user per person, single-use pre-auth keys
+#   url: http://192.168.1.11:8080
+#   api_key: ${HEADSCALE_API_KEY}   # headscale apikeys create
+#   server_url: https://hs.example.com   # what the Tailscale apps connect to
+# <<<
+# >>> vpn: netbird
+# vpn:
+#   provider: netbird         # one group per person, one-off setup keys
+#   url: https://api.netbird.io     # or your self-hosted management server
+#   token: ${NETBIRD_TOKEN}         # a personal access token (Users > your user > Access tokens)
+#   # management_url: https://netbird.example.com   # what the apps connect to, if self-hosted
+# <<<
+# >>> vpn: zerotier
+# vpn:
+#   provider: zerotier        # people join the network; HomeRoster authorizes the new member
+#   token: ${ZEROTIER_TOKEN}        # ZeroTier Central > Account > API Access Tokens
+#   network_id: 0123456789abcdef
+#   # url: https://ztnet.example.com/api/v1   # a self-hosted controller with the Central API (ztnet)
+# <<<
+
+# ------------------------------------------------------------------------------------- Reverse proxy
+#  Pick ONE block as well.
+# >>> proxy: npm
+proxy:
+  provider: npm               # Nginx Proxy Manager: one access list per site, attached automatically
+  url: http://192.168.1.10:81
+  email: ${NPM_EMAIL}         # a dedicated user: Proxy Hosts + Access Lists = Manage, the rest Hidden
+  password: ${NPM_PASSWORD}
+  acl_prefix: homeroster-     # access lists are named <prefix><app id>
+# <<<
+# >>> proxy: traefik
+# proxy:
+#   provider: traefik         # Traefik v2/v3: one ipAllowList middleware per site, in a file Traefik watches
+#   url: http://192.168.1.10:8080   # Traefik API (api.insecure, or a router to api@internal)
+#   # username: ${TRAEFIK_API_USERNAME}   # if the API is behind basic auth
+#   # password: ${TRAEFIK_API_PASSWORD}
+#   file: /traefik/homeroster.yml        # inside the container; mount Traefik's dynamic directory on /traefik
+#   middleware_prefix: homeroster-       # attach <prefix><app id>@file to each router
+# <<<
+# >>> proxy: caddy
+# proxy:
+#   provider: caddy           # one snippet per site; add "import .../homeroster-<app>.caddy" to each site
+#   dir: /proxy               # mounted from the host (install.sh does it)
+# <<<
+# >>> proxy: nginx
+# proxy:
+#   provider: nginx           # one allow-list per site; add "include .../homeroster-<app>.conf;" to each server
+#   dir: /proxy
+# <<<
+# >>> proxy: swag
+# proxy:
+#   provider: swag            # SWAG (nginx by LinuxServer); with the swag-auto-reload mod it reloads by itself
+#   dir: /proxy               # <swag config>/nginx/homeroster on the host
+# <<<
+# >>> proxy: haproxy
+# proxy:
+#   provider: haproxy         # one ACL file per site: "acl hr_<app> src -f .../homeroster-<app>.lst"
+#   dir: /proxy
+#   # runtime_api: 127.0.0.1:9999          # update HAProxy live ("stats socket ipv4@127.0.0.1:9999 level admin")
+#   # haproxy_dir: /etc/haproxy/homeroster # where HAProxy sees the files (for the runtime API)
+# <<<
+# >>> proxy: zoraxy
+# proxy:
+#   provider: zoraxy          # one access rule (IP whitelist) per site, attached automatically
+#   url: http://192.168.1.10:8000
+#   username: ${ZORAXY_USERNAME}
+#   password: ${ZORAXY_PASSWORD}
+# <<<
+
+# -------------------------------------------------------------------------------------------- E-mail
+mail:
+  provider: smtp
+  host: smtp.gmail.com
+  port: 465                   # 465 = TLS, 587 = STARTTLS
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
+  from_name: Alex's homelab
+  # from_address: homelab@example.com   # default: username
+  # admin_email: you@example.com        # alerts and test e-mails; default: from_address
+
+# ---------------------------------------------------------------------------------------------- Apps
+#  The key is the app id: it names the access list and is the default subdomain (<id>.<domain>).
+#  Optional per app: label, description ({en: ..., fr: ...}), color (violet, indigo, sky, emerald,
+#  amber, rose, teal, orange), icon (see static/icons.svg), hostname, public_url, uses (another app id
+#  whose account this app reuses), logo: the image of the e-mail. The built-in connectors use their app's
+#  official icon from https://dashboard-icons.homarr.dev (downloaded once, then cached); set a name from
+#  that collection, a URL, a PNG path, or "builtin" for HomeRoster's own pictogram (no download).
+apps:
+# >>> app: jellyfin
+  jellyfin:
+    connector: jellyfin
+    url: http://192.168.1.20:8096
+    api_key: ${JELLYFIN_API_KEY}         # Dashboard > API Keys
+# <<<
+# >>> app: plex
+#   plex:                            # Plex: your server is shared with their e-mail address (plex.tv invitation)
+#     connector: plex
+#     url: http://192.168.1.20:32400
+#     token: ${PLEX_TOKEN}             # your X-Plex-Token
+#     # libraries: [Movies, TV Shows]   # default: every library
+# <<<
+# >>> app: emby
+#   emby:
+#     connector: emby
+#     url: http://192.168.1.20:8096
+#     api_key: ${EMBY_API_KEY}         # Settings > API Keys
+# <<<
+# >>> app: seerr
+  seerr:
+    connector: seerr
+    url: http://192.168.1.21:5055
+    api_key: ${SEERR_API_KEY}
+    uses: jellyfin                       # Seerr signs in with the Jellyfin (or Plex, Emby) account
+# <<<
+# >>> app: immich
+  immich:
+    connector: immich
+    url: http://192.168.1.22:2283
+    api_key: ${IMMICH_API_KEY}
+    # hostname: photos.example.com
+# <<<
+# >>> app: openwebui
+  openwebui:
+    connector: openwebui
+    url: http://192.168.1.23:8080
+    api_key: ${OPENWEBUI_API_KEY}
+    hostname: ai.example.com
+    label: Open WebUI
+# <<<
+# >>> app: audiobookshelf
+#   audiobookshelf:
+#     connector: audiobookshelf
+#     url: http://192.168.1.24:13378
+#     api_key: ${AUDIOBOOKSHELF_API_KEY}   # Settings > API keys (admin)
+# <<<
+# >>> app: navidrome
+#   navidrome:
+#     connector: navidrome
+#     url: http://192.168.1.25:4533
+#     username: ${NAVIDROME_USERNAME}      # an admin account
+#     password: ${NAVIDROME_PASSWORD}
+# <<<
+# >>> app: vaultwarden
+#   vaultwarden:                     # people are invited and choose their own master password
+#     connector: vaultwarden
+#     url: http://192.168.1.26:80
+#     admin_token: ${VAULTWARDEN_ADMIN_TOKEN}   # the ADMIN_TOKEN of the /admin page
+#     hostname: vault.example.com
+# <<<
+# >>> app: homeassistant
+#   homeassistant:                   # Home Assistant OS (VM), Container (Docker) or Core (LXC): same API
+#     connector: homeassistant
+#     url: http://192.168.1.27:8123
+#     token: ${HOMEASSISTANT_TOKEN}    # an administrator's long-lived access token (Profile > Security)
+#     hostname: home.example.com
+#     # local_only: true              # their account only works from the LAN / VPN
+# <<<
+# >>> app: nextcloud
+#   # Any app with a user-management REST API can be added without code. Example: Nextcloud.
+#   nextcloud:
+#     connector: rest
+#     label: Nextcloud
+#     description: {en: Files, calendar and contacts, fr: "Fichiers, agenda et contacts"}
+#     icon: cloud
+#     color: sky
+#     logo: nextcloud
+#     languages: {pt: pt_BR, zh: zh_CN}       # HomeRoster language -> Nextcloud language
+#     url: http://192.168.1.24
+#     login: username
+#     username: "{slug}"
+#     auth: {type: basic, username: "${NEXTCLOUD_ADMIN_USER}", password: "${NEXTCLOUD_ADMIN_PASSWORD}"}
+#     headers: {OCS-APIRequest: "true"}
+#     success: {field: ocs.meta.statuscode, equals: [100, 200], message: ocs.meta.message}
+#     endpoints:
+#       health:       {method: GET, path: "/ocs/v1.php/cloud/capabilities?format=json", version: ocs.data.version.string}
+#       find:         {method: GET, path: "/ocs/v1.php/cloud/users/{username}?format=json", id: ocs.data.id}
+#       create:       {method: POST, path: "/ocs/v1.php/cloud/users?format=json", id: "{username}",
+#                      form: {userid: "{username}", password: "{password}", email: "{email}", displayName: "{name}"}}
+#       set_password: {method: PUT, path: "/ocs/v1.php/cloud/users/{id}?format=json", form: {key: password, value: "{password}"}}
+#       disable:      {method: PUT, path: "/ocs/v1.php/cloud/users/{id}/disable?format=json"}
+#       enable:       {method: PUT, path: "/ocs/v1.php/cloud/users/{id}/enable?format=json"}
+#       delete:       {method: DELETE, path: "/ocs/v1.php/cloud/users/{id}?format=json"}
+#       language:     {method: PUT, path: "/ocs/v1.php/cloud/users/{id}?format=json", form: {key: language, value: "{language}"}}
+# <<<

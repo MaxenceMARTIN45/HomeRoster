@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, code_field %}
+{% block title %}{{ t('services.title') }}{% endblock %}
+
+{% macro option_fields(prefix, fields) -%}
+{% for f in fields %}
+<div class="field">
+  <label for="{{ prefix }}{{ f.name }}"><code>{{ f.name }}</code>{% if f.required %} *{% endif %}</label>
+  <input type="{{ 'password' if f.secret else 'text' }}" id="{{ prefix }}{{ f.name }}" name="{{ prefix }}{{ f.name }}"
+         value="{{ f.value }}" autocomplete="off" spellcheck="false"
+         {% if f.secret and f.is_set %}placeholder="{{ t('services.secret_keep') }}"{% elif f.required and not f.secret %}required{% endif %}>
+</div>
+{% endfor %}
+{%- endmacro %}
+
+{% macro confirm(id) -%}
+{{ code_field(id, t('auth.your_code')) }}
+<label class="check mt-8"><input type="checkbox" name="force" value="1"> {{ t('services.force') }}</label>
+{%- endmacro %}
+
+{% macro provider_card(kind, title, current, forms) -%}
+<div class="card">
+  <div class="card-head"><div><h2>{{ title }}</h2><p class="faint sub">{{ t('services.provider_lead') }}</p></div></div>
+  <form method="post" action="/settings/services/{{ kind }}" autocomplete="off" data-switch>
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="field">
+      <label for="{{ kind }}_provider">{{ t('services.provider') }}</label>
+      <select id="{{ kind }}_provider" name="provider" data-switch-select>
+        {% for name in forms %}<option value="{{ name }}" {{ 'selected' if name == current }}>{{ name }}</option>{% endfor %}
+      </select>
+    </div>
+    {% for name, fields in forms.items() %}
+    <fieldset class="switch-panel" data-switch-panel="{{ name }}" {% if name != current %}hidden disabled{% endif %}>
+      {{ option_fields(name ~ '__', fields) }}
+    </fieldset>
+    {% endfor %}
+    {{ confirm(kind ~ '_code') }}
+    <button class="btn primary block mt-16" type="submit">{{ icon('check') }}{{ t('services.test_and_save') }}</button>
+  </form>
+</div>
+{%- endmacro %}
+
+{% block content %}
+<a class="btn sm ghost" href="/settings">{{ icon('chevron-left', 'sm') }}{{ t('settings.title') }}</a>
+<div class="topbar"><div class="title"><h1>{{ t('services.title') }}</h1><p class="muted small">{{ t('services.lead') }}</p></div></div>
+
+<div class="grid two">
+  {{ provider_card('vpn', t('status.kind_vpn'), vpn_provider, vpn_forms) }}
+  {{ provider_card('proxy', t('status.kind_proxy'), proxy_provider, proxy_forms) }}
+</div>
+
+<div class="card mt-16">
+  <div class="card-head"><div><h2>{{ t('settings.apps') }}</h2><p class="faint sub">{{ t('services.apps_lead') }}</p></div></div>
+  <div class="list">
+    {% for a in service_apps %}
+    <details class="more">
+      <summary>{{ icon('app', 'sm') }}<strong>{{ a.label }}</strong> <span class="faint"><code>{{ a.id }}</code> · {{ a.connector }}</span></summary>
+      {% if a.editable %}
+      <form method="post" action="/settings/services/app" autocomplete="off" class="mt-12">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="app_id" value="{{ a.id }}">
+        <input type="hidden" name="connector" value="{{ a.connector }}">
+        {{ option_fields(a.connector ~ '__', a.fields) }}
+        {{ confirm('code_' ~ a.id) }}
+        <button class="btn primary block mt-12" type="submit">{{ icon('check') }}{{ t('services.test_and_save') }}</button>
+      </form>
+      {% else %}
+      <p class="hint mt-12">{{ t('services.yaml_only') }}</p>
+      {% endif %}
+      <form method="post" action="/settings/services/app/{{ a.id }}/delete" class="mt-12"
+            data-confirm="{{ t('services.remove_confirm', app=a.label) }}">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        {{ code_field('del_' ~ a.id, t('auth.your_code')) }}
+        <button class="btn danger block mt-8" type="submit">{{ icon('trash') }}{{ t('services.remove') }}</button>
+      </form>
+    </details>
+    {% else %}
+    <p class="muted">{{ t('new.no_apps') }}</p>
+    {% endfor %}
+  </div>
+
+  <details class="more">
+    <summary>{{ icon('plus', 'sm') }}{{ t('services.add_app') }}</summary>
+    <form method="post" action="/settings/services/app" autocomplete="off" class="mt-12" data-switch>
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field">
+        <label for="new_connector">{{ t('services.connector') }}</label>
+        <select id="new_connector" name="connector" data-switch-select>
+          {% for name in new_app_forms %}<option value="{{ name }}">{{ name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="new_app_id">{{ t('services.app_id') }}</label>
+        <input id="new_app_id" name="app_id" required pattern="[a-z][a-z0-9_\-]{0,31}" spellcheck="false" placeholder="jellyfin">
+        <span class="hint">{{ t('services.app_id_hint') }}</span>
+      </div>
+      {% for name, fields in new_app_forms.items() %}
+      <fieldset class="switch-panel" data-switch-panel="{{ name }}" {% if not loop.first %}hidden disabled{% endif %}>
+        {{ option_fields(name ~ '__', fields) }}
+      </fieldset>
+      {% endfor %}
+      {{ confirm('new_code') }}
+      <button class="btn primary block mt-16" type="submit">{{ icon('plus') }}{{ t('services.add_app') }}</button>
+    </form>
+  </details>
+</div>
+{% endblock %}

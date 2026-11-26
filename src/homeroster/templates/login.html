@@ -1,0 +1,24 @@
+{% extends "auth_base.html" %}
+{% from "_ui.html" import icon, flash_box %}
+{% block title %}{{ t('auth.sign_in') }}{% endblock %}
+{% block card %}
+{{ flash_box(flash, flash_kind) }}
+<div class="card">
+  <h1>{{ t('auth.sign_in') }}</h1>
+  {% if error %}<div class="flash error mt-16">{{ icon('alert') }}<span>{{ error }}</span></div>{% endif %}
+  <form method="post" action="/login" class="mt-16">
+    <div class="field">
+      <label for="username">{{ t('auth.username') }}</label>
+      <input type="text" id="username" name="username" required autocapitalize="off" autocomplete="username" autofocus>
+    </div>
+    <div class="field">
+      <label for="password">{{ t('auth.password') }}</label>
+      <div class="input-group">
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+        <div class="addons"><button type="button" class="btn" data-toggle-password="password" aria-label="{{ t('password.show') }}">{{ icon('eye') }}</button></div>
+      </div>
+    </div>
+    <button class="btn primary lg block mt-16" type="submit">{{ icon('lock') }}{{ t('auth.sign_in') }}</button>
+  </form>
+</div>
+{% endblock %}

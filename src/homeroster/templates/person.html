@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, avatar, password_field, language_select, code_field %}
+{% block title %}{{ p.display_name }}{% endblock %}
+{% block body_attrs %}data-open-qr="{{ open_qr }}"{% endblock %}
+{% block content %}
+{% set online = devices|selectattr('online')|list|length > 0 %}
+<a class="btn ghost sm" href="/people">{{ icon('chevron-left', 'sm') }}{{ t('people.title') }}</a>
+
+<div class="hero">
+  {{ avatar(p.display_name, online, 'xl') }}
+  <div class="meta">
+    <h1>{{ p.display_name }}</h1>
+    <div class="row wrap mt-8">
+      {% if p.is_admin %}<span class="chip accent">{{ icon('crown') }}{{ t('person.admin_all_apps') }}</span>{% endif %}
+      <span class="chip {{ 'ok' if online }}"><span class="dot-live"></span>{{ t('person.online') if online else t('person.offline') }}</span>
+      <span class="chip"><code>{{ p.slug }}</code></span>
+      <span class="chip">{{ icon('globe') }}{{ languages.get(p.language, p.language) }}</span>
+    </div>
+    <p class="muted small mt-8">{{ p.email or t('person.no_email') }} · {{ t('person.added_on', date=p.created_at|date(t('format.date'))) }}</p>
+  </div>
+</div>
+
+{% if vpn_error %}<div class="flash warn">{{ icon('alert') }}<span>{{ vpn.label }}: {{ vpn_error }}</span></div>{% endif %}
+
+<div class="grid two">
+  <!-- ======================== APPS -->
+  <div class="card">
+    <div class="card-head"><div><h2>{{ t('person.apps') }}</h2><p class="faint sub">{{ t('person.apps_lead') }}</p></div></div>
+    {# Apps they can open first, then the others (with their "Give" form), so the list reads top to bottom. #}
+    {% set granted, others = [], [] %}
+    {% for app in apps.values() %}{% set _ = (granted if p.is_admin or app.id in grants else others).append(app) %}{% endfor %}
+    {% for app in granted + others %}
+    {% set has_access = p.is_admin or app.id in grants %}
+    {% set acc = accounts.get(app.id) %}
+    {% set parent_acc = accounts.get(app.parent) if app.parent else None %}
+    {% set needs_pw = not acc and (app.manages_password or (app.parent and not parent_acc)) %}
+    <div class="app-line t-{{ app.color }}">
+      <span class="app-icon">{{ icon(app.icon) }}</span>
+      <div class="grow">
+        <div class="row"><strong>{{ app.label }}</strong>
+          {% if has_access %}<span class="chip ok">{{ icon('check') }}{{ t('person.access') }}</span>{% else %}<span class="chip">{{ t('person.no_access') }}</span>{% endif %}
+        </div>
+        <p class="faint">
+          {% if acc %}{{ t('person.sign_in_with') }} <code>{{ acc.login }}</code>{% if acc.status == 'disabled' %} · <span class="chip warn">{{ t('person.disabled') }}</span>{% endif %}
+          {% elif app.parent and parent_acc %}{{ t('person.uses_parent', parent=apps[app.parent].label) }}
+          {% else %}{{ t('person.no_account') }}{% endif %}
+        </p>
+      </div>
+      {% if app.id in grants and not p.is_admin %}
+      <form method="post" action="/people/{{ p.id }}/apps/{{ app.id }}" data-confirm="{{ t('person.revoke_confirm', app=app.label, name=p.display_name) }}">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="revoke">
+        <button class="btn sm danger" type="submit">{{ t('person.revoke') }}</button>
+      </form>
+      {% elif not needs_pw and not (p.is_admin and acc and acc.status != 'disabled') %}
+      <form method="post" action="/people/{{ p.id }}/apps/{{ app.id }}">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="grant">
+        <button class="btn sm" type="submit">{{ t('person.reenable') if acc and acc.status == 'disabled' else (t('person.grant') if not p.is_admin else t('person.link')) }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% if needs_pw and (app.id not in grants or not acc) %}
+    <details class="more">
+      <summary>{{ icon('plus', 'sm') }}{{ t('person.create_account') if app.id in grants or p.is_admin else t('person.grant_app', app=app.label) }}</summary>
+      <form method="post" action="/people/{{ p.id }}/apps/{{ app.id }}" class="stack">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="grant">
+        {{ password_field('pw_' ~ app.id, t('person.new_account_password'), name='password') }}
+        <button class="btn primary sm" type="submit">{{ icon('check', 'sm') }}{{ t('common.confirm') }}</button>
+      </form>
+    </details>
+    {% endif %}
+    {% else %}
+    <p class="muted">{{ t('new.no_apps') }}</p>
+    {% endfor %}
+  </div>
+
+  <!-- ======================== DEVICES -->
+  <div class="card">
+    <div class="card-head"><div><h2>{{ t('person.devices') }}</h2><p class="faint sub">{{ t('person.devices_lead') }}</p></div></div>
+    <div class="list">
+      {% for d in devices %}
+      <div class="list-row">
+        <span class="device-icon">{{ icon('phone' if d.extra.device in ('phone', 'mobile', 'iphone', 'android') else 'device') }}</span>
+        <div class="meta">
+          <div class="title">{{ d.extra.device }}</div>
+          {% if d.pending %}
+          <div class="faint"><span class="chip warn">{{ t('person.invitation_pending') }}</span></div>
+          {% else %}
+          <div class="faint"><code>{{ d.ip }}</code> · {% if d.online %}<span class="chip ok">{{ t('person.online_short') }}</span>{% else %}{{ t('person.offline_short') }}{% endif %}</div>
+          {% endif %}
+        </div>
+        {% if d.pending or not vpn.invite_only %}
+        <button class="btn sm icon-only" type="button" aria-label="{{ t('qr.title') }}" title="{{ t('qr.title') }}" data-peer-id="{{ d.id }}"
+                data-qr="/people/{{ p.id }}/devices/qr?device={{ d.id|urlencode }}" data-qr-title="{{ d.name }}"
+                data-qr-conf="/people/{{ p.id }}/devices/conf?device={{ d.id|urlencode }}">{{ icon('qr') }}</button>
+        {% endif %}
+        <form method="post" action="/people/{{ p.id }}/devices/delete" data-confirm="{{ t('person.device_delete_confirm', name=d.name) }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="device_id" value="{{ d.id }}">
+          <button class="btn sm icon-only ghost" type="submit" aria-label="{{ t('person.device_delete') }}">{{ icon('trash') }}</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="muted">{{ t('person.no_devices') }}</p>
+      {% endfor %}
+    </div>
+    <details class="more">
+      <summary>{{ icon('plus', 'sm') }}{{ t('person.add_device') }}</summary>
+      <form method="post" action="/people/{{ p.id }}/devices" class="row">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="text" name="device" placeholder="{{ t('person.device_placeholder') }}" required autocapitalize="off" aria-label="{{ t('person.device_name') }}">
+        <button class="btn primary" type="submit">{{ t('common.create') }}</button>
+      </form>
+      <p class="hint mt-8">{{ t('person.device_hint', slug=p.slug) }}</p>
+    </details>
+  </div>
+
+  <!-- ======================== PASSWORD -->
+  <div class="card">
+    <div class="card-head"><div><h2>{{ t('auth.password') }}</h2><p class="faint sub">{{ t('person.password_lead') }}</p></div></div>
+    <form method="post" action="/people/{{ p.id }}/password" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="stack">
+        {% for app in apps.values() if app.manages_password %}
+        {% set followers = apps.values()|selectattr('parent', 'equalto', app.id)|map(attribute='label')|list %}
+        <label class="check"><input type="checkbox" name="app_{{ app.id }}" value="1" {{ 'checked' if accounts.get(app.id) else 'disabled' }}>
+          {{ app.label }}{% if followers %} <span class="faint">({{ t('person.and_apps', apps=followers|join(', ')) }})</span>{% endif %}
+          {% if not accounts.get(app.id) %}<span class="faint">· {{ t('person.no_account_short') }}</span>{% endif %}</label>
+        {% endfor %}
+      </div>
+      <div class="mt-16">{{ password_field('reset_pw', t('person.new_password'), name='password') }}</div>
+      {{ code_field('reset_code', t('auth.your_code')) }}
+      <button class="btn primary block mt-16" type="submit">{{ icon('key') }}{{ t('person.replace_password') }}</button>
+    </form>
+  </div>
+
+  <!-- ======================== PROFILE AND ACTIONS -->
+  <div class="card">
+    <div class="card-head"><h2>{{ t('person.profile') }}</h2></div>
+    <form method="post" action="/people/{{ p.id }}/profile">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field"><label for="pn">{{ t('people.first_name') }}</label><input type="text" id="pn" name="display_name" value="{{ p.display_name }}" required maxlength="40"></div>
+      <div class="field"><label for="pe">{{ t('people.email') }}</label><input type="email" id="pe" name="email" value="{{ p.email }}" autocapitalize="off">
+        <span class="hint">{{ t('person.email_hint') }}</span></div>
+      <div class="field"><label for="pl">{{ t('people.language') }}</label>{{ language_select('language', p.language, 'pl') }}
+        <span class="hint">{{ t('new.language_hint') }}</span></div>
+      <label class="check mt-12"><input type="checkbox" name="is_admin" value="1" {{ 'checked' if p.is_admin }}>{{ icon('crown', 'sm') }}{{ t('person.admin_toggle') }}</label>
+      <button class="btn block mt-16" type="submit">{{ t('common.save') }}</button>
+    </form>
+    <details class="more">
+      <summary>{{ icon('send', 'sm') }}{{ t('person.more_actions') }}</summary>
+      <div class="stack">
+        <form method="post" action="/people/{{ p.id }}/welcome"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="btn block" type="submit">{{ icon('mail') }}{{ t('person.resend_welcome') }}</button></form>
+        <a class="btn block" href="/people/{{ p.id }}/welcome/preview" target="_blank" rel="noopener">{{ icon('eye') }}{{ t('person.preview_welcome') }}</a>
+        <form method="post" action="/people/{{ p.id }}/link"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="btn block" type="submit">{{ icon('link') }}{{ t('person.link_accounts') }}</button></form>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- ======================== REMOVAL -->
+<div class="card danger-zone">
+  <details>
+    <summary class="row"><span class="grow"><strong>{{ t('person.delete_title', name=p.display_name) }}</strong><br><span class="faint">{{ t('person.delete_lead') }}</span></span>{{ icon('trash') }}</summary>
+    <form method="post" action="/people/{{ p.id }}/delete" class="mt-16">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label class="check"><input type="checkbox" name="delete_accounts" value="1" checked>{{ t('person.delete_accounts', apps=apps.values()|map(attribute='label')|join(', ')) }}</label>
+      <div class="field mt-12"><label for="confirm">{{ t('person.type_to_confirm') }} <code>{{ p.display_name }}</code></label>
+        <input type="text" id="confirm" name="confirm" required autocapitalize="off" autocomplete="off"></div>
+      {{ code_field('del_code', t('auth.your_code')) }}
+      <button class="btn danger solid block mt-16" type="submit">{{ icon('trash') }}{{ t('person.delete_submit') }}</button>
+    </form>
+  </details>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+# ---------------------------------------------------------------- secrets and local state (NEVER commit)
+.env
+.env.*
+!.env.example
+config/*
+!config/homeroster.example.yaml
+data/
+*.db
+*.db-*
+*.sqlite*
+*.bak*
+*.tgz
+*.tar.gz
+docker-compose.override.yml   # written by install.sh (Traefik directory on this host)
+
+# Personal notes and real configuration: keep them here, they stay on your machine.
+private/
+local/
+*.local.*
+*.private.*
+
+# ---------------------------------------------------------------- Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------- editors and tools
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

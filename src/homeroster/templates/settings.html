@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, password_field, language_select, code_field %}
+{% block title %}{{ t('settings.title') }}{% endblock %}
+{% block content %}
+<div class="topbar"><div class="title"><h1>{{ t('settings.title') }}</h1><p class="muted small">{{ t('settings.signed_in_as') }} <strong>{{ admin.username }}</strong></p></div></div>
+
+<div class="grid two">
+  <div class="card">
+    <div class="card-head"><div><h2>{{ t('settings.language') }}</h2><p class="faint sub">{{ t('settings.language_lead') }}</p></div></div>
+    <form method="post" action="/settings/language" class="row">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      {{ language_select('language', current) }}
+      <button class="btn primary" type="submit">{{ t('common.save') }}</button>
+    </form>
+  </div>
+
+  <a class="card link-card" href="/settings/services">
+    <div class="card-head"><div><h2>{{ icon('settings') }} {{ t('settings.services') }}</h2><p class="faint sub">{{ t('settings.services_lead') }}</p></div>{{ icon('chevron-right') }}</div>
+  </a>
+
+  <div class="card">
+    <div class="card-head"><h2>{{ t('settings.about') }}</h2></div>
+    <dl class="kv">
+      <dt>{{ t('settings.version') }}</dt><dd>{{ version }}</dd>
+      <dt>{{ t('settings.domain') }}</dt><dd>{{ cfg.domain }}</dd>
+      <dt>{{ t('status.kind_vpn') }}</dt><dd>{{ vpn.label }}</dd>
+      <dt>{{ t('settings.apps') }}</dt><dd>{{ apps.values()|map(attribute='label')|join(', ') or '—' }}</dd>
+      <dt>{{ t('settings.default_device') }}</dt><dd>{{ cfg.default_device }}</dd>
+      <dt>{{ t('sync.title') }}</dt><dd>{{ t('settings.every_minutes', minutes=cfg.sync_interval // 60) }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h2>{{ t('settings.import_title') }}</h2><p class="faint sub">{{ t('settings.import_lead') }}</p></div></div>
+    <form method="post" action="/settings/import">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field">
+        <label for="toml">{{ t('settings.import_content') }}</label>
+        <textarea id="toml" name="toml" required spellcheck="false" placeholder='admins = ["alex"]&#10;&#10;[users]&#10;sam = ["jellyfin", "seerr", "immich"]'></textarea>
+        <span class="hint">{{ t('settings.import_hint') }}</span>
+      </div>
+      <button class="btn primary block mt-16" type="submit">{{ icon('upload') }}{{ t('settings.import') }}</button>
+    </form>
+    {% if people_count %}<p class="hint mt-12">{{ t('settings.import_existing', n=people_count) }}</p>{% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h2>{{ t('settings.admin_password') }}</h2><p class="faint sub">{{ t('settings.admin_password_lead') }}</p></div></div>
+    <form method="post" action="/settings/password" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field"><label for="current">{{ t('settings.current_password') }}</label>
+        <input type="password" id="current" name="current" required autocomplete="current-password"></div>
+      {{ password_field('newpw', t('person.new_password'), hint=t('password.min_admin'), name='password') }}
+      <div class="field"><label for="newpw2">{{ t('password.confirm') }}</label>
+        <input type="password" id="newpw2" name="password2" required autocomplete="new-password" data-match="newpw">
+        <span class="error-text hidden" id="newpw2-msg">{{ t('password.mismatch') }}</span></div>
+      {{ code_field('admin_code', t('auth.your_code')) }}
+      <button class="btn block mt-16" type="submit">{{ icon('key') }}{{ t('settings.change_password') }}</button>
+    </form>
+  </div>
+</div>
+
+<form method="post" action="/logout"><button class="btn ghost block" type="submit">{{ icon('logout') }}{{ t('nav.sign_out') }}</button></form>
+{% endblock %}

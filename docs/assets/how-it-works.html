@@ -1,0 +1,152 @@
+<!doctype html>
+<!-- Source of docs/assets/how-it-works-{light,dark}.png (python scripts/render_assets.py). Fixed 1600x860 canvas. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How HomeRoster works</title>
+<style>
+  :root {
+    --bg: #f7f6ff; --dot: rgba(91, 76, 245, .08); --card: #ffffff; --line: #e7e5f6; --text: #14121f; --text-2: #5d5a72;
+    --text-3: #8d8aa3; --chip: #f1f0fb; --accent: #5b4cf5; --glow: rgba(123, 109, 255, .22); --shadow: 0 18px 50px rgba(40, 30, 120, .10);
+    --ok: #12925f; --ok-bg: #e3f6ee; --no: #c2364d; --no-bg: #fde8ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #110f1d; --dot: rgba(255, 255, 255, .05); --card: #1a1730; --line: #2c2850; --text: #f1effc; --text-2: #b2aecb;
+      --text-3: #7f7b9c; --chip: #252141; --accent: #8b7dff; --glow: rgba(123, 109, 255, .35); --shadow: 0 18px 50px rgba(0, 0, 0, .35);
+      --ok: #3fd39a; --ok-bg: #12352a; --no: #ff7b92; --no-bg: #3a1823;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    width: 1600px; height: 860px; position: relative; overflow: hidden; color: var(--text);
+    font-family: "Segoe UI Variable Display", "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, Roboto, sans-serif;
+    background: radial-gradient(circle at 30% 42%, var(--glow) 0, transparent 34%), radial-gradient(var(--dot) 1.4px, transparent 1.6px) 0 0 / 28px 28px, var(--bg);
+  }
+  .card { position: absolute; background: var(--card); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); }
+  .tile { width: 52px; height: 52px; border-radius: 15px; display: grid; place-items: center; flex: none; }
+  .tile svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  h3 { margin: 0; font-size: 22px; font-weight: 750; letter-spacing: -.01em; }
+  p { margin: 4px 0 0; font-size: 16px; line-height: 1.45; color: var(--text-2); }
+  .eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--text-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { padding: 4px 10px; border-radius: 999px; background: var(--chip); color: var(--text-2); font-size: 13px; font-weight: 650; }
+
+  /* You */
+  .you { left: 56px; top: 286px; width: 270px; padding: 26px; }
+  .you .tile { background: linear-gradient(135deg, #f59e0b, #f97316); margin-bottom: 18px; }
+
+  /* HomeRoster */
+  .hr { left: 420px; top: 196px; width: 380px; padding: 30px; border: 0; color: #fff;
+        background: linear-gradient(140deg, #7b6dff 0%, #5b4cf5 50%, #3a2fb8 100%); box-shadow: 0 30px 80px rgba(70, 55, 220, .45); }
+  .hr .brand { display: flex; align-items: center; gap: 14px; }
+  .hr .logo { width: 58px; height: 58px; border-radius: 16px; background: rgba(255, 255, 255, .16); display: grid; place-items: center; }
+  .hr h2 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+  .hr .sub { color: #dcd8ff; font-size: 15px; margin-top: 2px; }
+  .hr ul { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 10px; }
+  .hr li { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, .12);
+           font-size: 15.5px; color: #f3f1ff; }
+  .hr li svg { width: 20px; height: 20px; flex: none; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .hr code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 14px; background: rgba(0, 0, 0, .18); padding: 1px 6px; border-radius: 6px; }
+
+  /* Services */
+  .svc { left: 920px; width: 624px; height: 132px; padding: 22px 24px; display: flex; gap: 18px; align-items: flex-start; }
+  .svc .what { margin-left: auto; text-align: right; white-space: nowrap; font-size: 14px; font-weight: 700; color: var(--accent); padding-top: 2px; }
+
+  /* Friends lane */
+  .lane { left: 56px; right: 56px; top: 706px; height: 112px; padding: 0 28px; display: flex; align-items: center; gap: 14px; }
+  .lane .eyebrow { width: 150px; line-height: 1.35; }
+  .step { display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 10px; border-radius: 14px; background: var(--chip); font-size: 15px; font-weight: 650; white-space: nowrap; }
+  .step .tile { width: 36px; height: 36px; border-radius: 11px; }
+  .step .tile svg { width: 20px; height: 20px; }
+  .arrow { color: var(--text-3); font-size: 22px; }
+  .ok { background: var(--ok-bg); color: var(--ok); }
+  .no { background: var(--no-bg); color: var(--no); }
+  .result { display: flex; gap: 8px; }
+  .result span { padding: 9px 14px; border-radius: 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+
+  svg.wires { position: absolute; inset: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<svg class="wires" width="1600" height="860" viewBox="0 0 1600 860">
+  <defs>
+    <linearGradient id="wire" x1="0" x2="1"><stop offset="0" stop-color="#7b6dff"/><stop offset="1" stop-color="#2bc4f0"/></linearGradient>
+    <marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#2bc4f0"/>
+    </marker>
+    <marker id="head-v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#7b6dff"/>
+    </marker>
+  </defs>
+  <path d="M326 400 C 370 400, 370 400, 412 400" stroke="#7b6dff" stroke-width="3" fill="none" marker-end="url(#head-v)"/>
+  <g stroke="url(#wire)" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#head)">
+    <path d="M800 330 C 860 330, 850 106, 912 106"/>
+    <path d="M800 380 C 860 380, 850 258, 912 258"/>
+    <path d="M800 430 C 860 430, 850 410, 912 410"/>
+    <path d="M800 480 C 860 480, 850 562, 912 562"/>
+  </g>
+</svg>
+
+<div class="card you">
+  <div class="tile"><svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
+  <div class="eyebrow">You, the admin</div>
+  <h3 style="margin-top:6px">One form</h3>
+  <p>Name, e-mail, password and apps, on your phone, side by side. 2FA required.</p>
+</div>
+
+<div class="card hr">
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 512 512" width="40" height="40"><path d="M108 238 256 114l148 124" fill="none" stroke="#fff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/><path d="M152 214v156a26 26 0 0 0 26 26h156a26 26 0 0 0 26-26V214" fill="none" stroke="#fff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/><circle cx="256" cy="258" r="40" fill="#fff"/><path d="M186 396a70 70 0 0 1 140 0z" fill="#fff"/></svg></div>
+    <div><h2>HomeRoster</h2><div class="sub">the source of truth for access</div></div>
+  </div>
+  <ul>
+    <li><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 19.5c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.4c1.6.8 2.7 2.6 3 5.1"/></svg>People, their apps, their language</li>
+    <li><svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>Devices named <code>julia - phone</code></li>
+    <li><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4"/></svg>Access rebuilt every 5 minutes</li>
+  </ul>
+</div>
+
+<div class="card svc" style="top:40px">
+  <div class="tile" style="background:#0ea5e9"><svg viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></div>
+  <div><h3>VPN</h3><p>A QR code or an invitation per phone or TV.</p>
+    <div class="chips"><span class="chip">WireGuard</span><span class="chip">Tailscale</span><span class="chip">Headscale</span><span class="chip">ZeroTier</span><span class="chip">+4</span></div></div>
+  <div class="what">devices</div>
+</div>
+
+<div class="card svc" style="top:192px">
+  <div class="tile" style="background:#5b4cf5"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.6-3.4 8.3-8 9-4.6-.7-8-4.4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
+  <div><h3>Reverse proxy</h3><p>Allowed VPN IPs per app, then deny all.</p>
+    <div class="chips"><span class="chip">NPM</span><span class="chip">Traefik</span><span class="chip">Caddy</span><span class="chip">nginx</span><span class="chip">HAProxy</span><span class="chip">+2</span></div></div>
+  <div class="what">IP allow-lists</div>
+</div>
+
+<div class="card svc" style="top:344px">
+  <div class="tile" style="background:#8b5cf6"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg></div>
+  <div><h3>Apps</h3><p>One account per app, all with the same password.</p>
+    <div class="chips"><span class="chip">Jellyfin</span><span class="chip">Seerr</span><span class="chip">Immich</span><span class="chip">Open WebUI</span><span class="chip">+7</span></div></div>
+  <div class="what">accounts</div>
+</div>
+
+<div class="card svc" style="top:496px">
+  <div class="tile" style="background:#10b981"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg></div>
+  <div><h3>E-mail</h3><p>In their language: their apps, sign-in ids, the steps.</p>
+    <div class="chips"><span class="chip">SMTP</span><span class="chip">Gmail</span><span class="chip">any provider</span></div></div>
+  <div class="what">welcome e-mail</div>
+</div>
+
+<div class="card lane">
+  <div class="eyebrow">Then family &amp;<br>friends connect</div>
+  <div class="step"><span class="tile" style="background:linear-gradient(135deg,#f472b6,#e11d74)"><svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>Julia's phone</div>
+  <span class="arrow">→</span>
+  <div class="step"><span class="tile" style="background:#0ea5e9"><svg viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></span>VPN tunnel · 10.8.0.6</div>
+  <span class="arrow">→</span>
+  <div class="step"><span class="tile" style="background:#5b4cf5"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.6-3.4 8.3-8 9-4.6-.7-8-4.4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span>Proxy checks the IP</div>
+  <span class="arrow">→</span>
+  <div class="result"><span class="ok">✓ Jellyfin</span><span class="ok">✓ Immich</span><span class="no">✕ Radarr · admins only</span></div>
+</div>
+
+</body>
+</html>
