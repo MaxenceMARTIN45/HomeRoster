@@ -1,0 +1,16 @@
+name: Feature or connector request
+description: Suggest an improvement, a new app connector or a new provider.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you need?
+      description: The problem you want to solve, and how you imagine it in HomeRoster.
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: API details (for a new app)
+      description: Links to the app's user-management API docs and the authentication it needs.

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, app_chip, avatar %}
+{% block title %}{{ t('people.title') }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="title">
+    <h1>{{ t('people.title') }}</h1>
+    <p class="muted small">{{ t('people.subtitle', owner=owner) }}</p>
+  </div>
+  <a class="btn primary" href="/people/new">{{ icon('user-plus') }}<span>{{ t('common.add') }}</span></a>
+</div>
+
+{% if vpn_error %}<div class="flash warn">{{ icon('alert') }}<span>{{ vpn.label }}: {{ vpn_error }} {{ t('people.devices_unavailable') }}</span></div>{% endif %}
+{% if last_sync and not last_sync.ok and not last_sync.skipped %}<div class="flash error">{{ icon('alert') }}<span>{{ t('sync.last_failed', error=last_sync.error) }} <a href="/status">{{ t('sync.see_status') }}</a></span></div>{% endif %}
+
+<div class="stats">
+  <div class="stat"><div class="label">{{ t('people.stat_people') }}</div><div class="value">{{ stats.people }}</div></div>
+  <div class="stat"><div class="label">{{ t('people.stat_online') }}</div><div class="value ok">{{ stats.online }}</div></div>
+  <div class="stat"><div class="label">{{ t('people.stat_devices') }}</div><div class="value">{{ stats.devices }}</div></div>
+</div>
+
+<div class="card">
+  {% if rows %}
+  <div class="search mb-12">{{ icon('search') }}<input type="search" id="search" placeholder="{{ t('people.search') }}" aria-label="{{ t('people.search') }}"></div>
+  <div class="people">
+    {% for r in rows %}
+    <a class="person-row" href="/people/{{ r.p.id }}" data-search="{{ r.p.slug }} {{ r.p.display_name|lower }}">
+      {{ avatar(r.p.display_name, r.online) }}
+      <div class="meta">
+        <div class="name">{{ r.p.display_name }}{% if r.p.is_admin %}<span class="chip accent">{{ icon('crown') }}{{ t('people.admin') }}</span>{% endif %}</div>
+        <div class="apps">
+          {% if r.p.is_admin %}<span class="chip">{{ t('people.all_apps') }}</span>
+          {% else %}{% for app in apps.values() if app.id in r.grants %}{{ app_chip(app) }}{% else %}<span class="chip">{{ t('people.no_apps') }}</span>{% endfor %}{% endif %}
+          <span class="chip">{{ icon('phone') }}{{ r.devices|length }}</span>
+        </div>
+      </div>
+      {{ icon('chevron-right', 'chev') }}
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="icon-wrap">{{ icon('users', 'lg') }}</div>
+    <h2>{{ t('people.empty_title') }}</h2>
+    <p class="muted">{{ t('people.empty_lead') }}</p>
+    <div class="btn-row"><a class="btn primary" href="/people/new">{{ icon('user-plus') }}{{ t('common.add') }}</a><a class="btn" href="/settings">{{ icon('upload') }}{{ t('settings.import') }}</a></div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

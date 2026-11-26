@@ -1,0 +1,36 @@
+{% extends "auth_base.html" %}
+{% from "_ui.html" import icon, password_field %}
+{% block title %}{{ t('setup.title') }}{% endblock %}
+{% block card %}
+<div class="card">
+  <div class="lang-switch" role="group" aria-label="{{ t('settings.language') }}">
+    {% for code, label in languages.items() %}
+    <a href="/setup?lang={{ code }}" class="{{ 'active' if code == current }}" hreflang="{{ code }}" lang="{{ code }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <h1 class="mt-16">{{ t('setup.title') }}</h1>
+  <p class="lead">{{ t('setup.lead') }}</p>
+  {% if error %}<div class="flash error mt-16">{{ icon('alert') }}<span>{{ error }}</span></div>{% endif %}
+  <form method="post" action="/setup" class="mt-16" autocomplete="off">
+    <input type="hidden" name="language" value="{{ current }}">
+    {% if needs_token %}
+    <div class="field">
+      <label for="setup_token">{{ t('setup.token') }}</label>
+      <input type="text" id="setup_token" name="setup_token" required autocapitalize="off" spellcheck="false">
+      <span class="hint">{{ t('setup.token_hint') }}</span>
+    </div>
+    {% endif %}
+    <div class="field">
+      <label for="username">{{ t('auth.username') }}</label>
+      <input type="text" id="username" name="username" value="{{ username or '' }}" required autocapitalize="off" autocomplete="username">
+    </div>
+    {{ password_field('password', t('auth.password'), hint=t('password.min_admin')) }}
+    <div class="field">
+      <label for="password2">{{ t('password.confirm') }}</label>
+      <input type="password" id="password2" name="password2" required autocomplete="new-password" data-match="password">
+      <span class="error-text hidden" id="password2-msg">{{ t('password.mismatch') }}</span>
+    </div>
+    <button class="btn primary lg block mt-16" type="submit">{{ t('common.continue') }} {{ icon('chevron-right') }}</button>
+  </form>
+</div>
+{% endblock %}

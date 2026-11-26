@@ -1,0 +1,72 @@
+{% from "_ui.html" import icon, logo, flash_box %}
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f5f9" media="(prefers-color-scheme: light)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="HomeRoster">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}HomeRoster{% endblock %} · HomeRoster</title>
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/static/app.css?v={{ version }}">
+</head>
+<body {% block body_attrs %}{% endblock %}>
+{% set people_active = path.startswith('/people') and path != '/people/new' %}
+{% block layout %}
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="/people">{{ logo() }}<span>Home<span class="brand-accent">Roster</span></span></a>
+    <a class="btn primary block cta" href="/people/new">{{ icon('user-plus') }}{{ t('nav.new_person') }}</a>
+    <nav>
+      <a href="/people" class="{{ 'active' if people_active }}">{{ icon('users') }}{{ t('nav.people') }}</a>
+      <a href="/status" class="{{ 'active' if path.startswith('/status') }}">{{ icon('heartbeat') }}{{ t('nav.status') }}</a>
+      <a href="/activity" class="{{ 'active' if path.startswith('/activity') }}">{{ icon('list') }}{{ t('nav.activity') }}</a>
+      <a href="/settings" class="{{ 'active' if path.startswith('/settings') }}">{{ icon('settings') }}{{ t('nav.settings') }}</a>
+    </nav>
+    <div class="foot">
+      <form method="post" action="/logout"><button class="btn ghost block" type="submit">{{ icon('logout') }}{{ t('nav.sign_out') }}</button></form>
+      <p class="faint center mt-8">HomeRoster v{{ version }}</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="container">
+      {{ flash_box(flash, flash_kind) }}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <nav class="tabbar" aria-label="{{ t('nav.label') }}">
+    <a href="/people" class="{{ 'active' if people_active }}">{{ icon('users') }}{{ t('nav.people_short') }}</a>
+    <a href="/status" class="{{ 'active' if path.startswith('/status') }}">{{ icon('heartbeat') }}{{ t('nav.status_short') }}</a>
+    <a href="/people/new" class="fab" aria-label="{{ t('nav.new_person') }}"><span class="bubble">{{ icon('plus') }}</span></a>
+    <a href="/activity" class="{{ 'active' if path.startswith('/activity') }}">{{ icon('list') }}{{ t('nav.activity_short') }}</a>
+    <a href="/settings" class="{{ 'active' if path.startswith('/settings') }}">{{ icon('settings') }}{{ t('nav.settings_short') }}</a>
+  </nav>
+</div>
+{% endblock %}
+
+<dialog id="qr-dialog" aria-labelledby="qr-title">
+  <div class="dialog-body">
+    <div class="dialog-head">
+      <h2 id="qr-title">{{ t('qr.title') }}</h2>
+      <button class="btn ghost icon-only" type="button" data-close aria-label="{{ t('common.close') }}">{{ icon('x') }}</button>
+    </div>
+    <div class="qr-box big" id="qr-content"></div>
+    <p class="muted small qr-caption">{{ t('qr.how_to', app=vpn.client_app) }}</p>
+    <div class="btn-row">
+      <button class="btn" type="button" id="qr-big">{{ icon('maximize') }}<span>{{ t('qr.enlarge') }}</span></button>
+      <a class="btn" id="qr-download" href="#">{{ icon('download') }}{{ t('qr.download') }}</a>
+      <button class="btn primary" type="button" data-close>{{ t('common.done') }}</button>
+    </div>
+  </div>
+</dialog>
+<script type="application/json" id="i18n">{{ js_strings|tojson }}</script>
+<script src="/static/app.js?v={{ version }}" defer></script>
+</body>
+</html>

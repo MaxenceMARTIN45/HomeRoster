@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon %}
+{% block title %}{{ t('status.title') }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="title"><h1>{{ t('status.title') }}</h1><p class="muted small">{{ t('status.lead') }}</p></div>
+  <a class="btn" href="/status">{{ icon('refresh') }}<span>{{ t('status.test') }}</span></a>
+</div>
+
+<div class="health">
+  {% for h in health %}
+  <div class="health-item {{ 'ok' if h.ok }}">
+    <span class="status-dot"></span>
+    <div class="meta"><strong>{{ h.label }}</strong> <span class="faint">· {{ t('status.kind_' ~ h.kind) }}</span>
+      <p class="faint">{{ h.message }}{% if h.version %} · {{ h.version }}{% endif %}</p></div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div><h2>{{ t('sync.title') }}</h2>
+      <p class="faint sub">{{ t('sync.lead', minutes=cfg.sync_interval // 60) }}</p></div>
+  </div>
+  {% if last_sync %}
+  <dl class="kv">
+    <dt>{{ t('sync.last') }}</dt><dd>{{ last_sync.ts|date }} ({{ last_sync.ts|relative }})</dd>
+    <dt>{{ t('sync.result') }}</dt><dd>{% if last_sync.ok %}<span class="chip ok">{{ icon('check') }}OK</span>{% else %}<span class="chip err">{{ icon('x') }}{{ t('sync.failed_short') }}</span> {{ last_sync.error }}{% endif %}</dd>
+    {% if last_sync.changed %}<dt>{{ t('sync.changed') }}</dt><dd>{{ last_sync.changed|join(', ') }}</dd>{% endif %}
+  </dl>
+  {% if last_sync.warnings %}
+  <h3 class="mt-16">{{ t('sync.to_check') }}</h3>
+  <ul class="warn-list mt-8">{% for w in last_sync.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% else %}<p class="muted">{{ t('sync.never') }}</p>{% endif %}
+  <div class="btn-row mt-16">
+    <form method="post" action="/status/sync"><input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn primary" type="submit">{{ icon('refresh') }}{{ t('sync.now') }}</button></form>
+    <form method="post" action="/status/test-mail"><input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn" type="submit">{{ icon('mail') }}{{ t('status.test_mail') }}</button></form>
+  </div>
+</div>
+{% endblock %}

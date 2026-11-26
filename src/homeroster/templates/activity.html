@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon %}
+{% block title %}{{ t('activity.title') }}{% endblock %}
+{% block content %}
+<div class="topbar"><div class="title"><h1>{{ t('activity.title') }}</h1><p class="muted small">{{ t('activity.lead') }}</p></div></div>
+<div class="card">
+  <div class="log">
+    {% for r in rows %}
+    <div class="log-row {{ 'ko' if not r.ok }}">
+      <span class="ico">{{ icon('check' if r.ok else 'alert', 'sm') }}</span>
+      <div>
+        <div><strong>{{ t('audit.' ~ r.action) }}</strong>{% if r.target %} · {{ r.target }}{% endif %}</div>
+        {% if r.detail %}<div class="faint">{{ r.detail }}</div>{% endif %}
+        <div class="when">{{ r.ts|date }} · {{ r.ts|relative }}</div>
+      </div>
+    </div>
+    {% else %}
+    <p class="muted">{{ t('activity.empty') }}</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{{ t('email.welcome.title', name=person.name) }}
+
+{{ t('email.welcome.lead', owner=owner) }}
+
+{{ t('email.welcome.your_apps')|upper }}
+{% for a in apps %}
+- {{ a.label }} ({{ a.description }}): {{ a.url }}
+  {{ t('email.welcome.sign_in_with') }} {{ a.login }}{% if a.via %} · {{ t('email.welcome.via', app=a.via) }}{% endif %}
+
+{% endfor %}
+{{ t('email.welcome.how_it_works')|upper }}
+1. {{ t('email.welcome.step1_title', vpn=vpn_app) }}: {{ t('email.welcome.step1_text', vpn=vpn_app) }}
+2. {{ t('email.welcome.step2_title') }}: {{ t('email.welcome.step2_text', owner=owner, vpn=vpn_app) }}
+3. {{ t('email.welcome.step3_title') }}: {{ t('email.welcome.step3_text') }}
+
+{{ t('email.welcome.password_title')|upper }}
+{{ t('email.welcome.password_text') }}
+
+{{ t('email.welcome.help', owner=owner) }}

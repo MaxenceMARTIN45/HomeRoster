@@ -1,0 +1,57 @@
+{% macro icon(name, cls="") -%}
+<svg class="icon {{ cls }}" aria-hidden="true"><use href="/static/icons.svg#{{ name }}"></use></svg>
+{%- endmacro %}
+
+{% macro logo(cls="") -%}
+<img class="logo-mark {{ cls }}" src="/static/icon.svg" alt="" width="32" height="32">
+{%- endmacro %}
+
+{% macro app_chip(app) -%}
+<span class="chip app t-{{ app.color }}">{{ app.label }}</span>
+{%- endmacro %}
+
+{% macro avatar(name, online=None, cls="") -%}
+<span class="avatar t-{{ name|tint }} {{ cls }}">{{ name|initials }}{% if online is not none %}<span class="dot {{ 'on' if online }}"></span>{% endif %}</span>
+{%- endmacro %}
+
+{% macro flash_box(flash, kind) -%}
+{% if flash %}
+<div class="flash {{ kind }}" role="status">
+  {{ icon('check' if kind == 'ok' else 'alert') }}<span>{{ flash }}</span>
+  <button class="close" type="button" aria-label="{{ t('common.close') }}">{{ icon('x', 'sm') }}</button>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro language_select(name, selected, id=None) -%}
+<select name="{{ name }}" id="{{ id or name }}">
+  {% for code, label in LANGUAGES().items() %}
+  <option value="{{ code }}" {{ 'selected' if code == selected }}>{{ label }}</option>
+  {% endfor %}
+</select>
+{%- endmacro %}
+
+{% macro password_field(id, label, hint="", pair=False, match=None, required=True, name=None) -%}
+<div class="field">
+  <label for="{{ id }}">{{ label }}</label>
+  <div class="input-group">
+    <input type="password" id="{{ id }}" name="{{ name or id }}" autocomplete="new-password" {{ 'required' if required }}
+           autocapitalize="off" spellcheck="false" {% if match %}data-match="{{ match }}"{% endif %}>
+    <div class="addons">
+      {% if not match %}<button type="button" class="btn" data-generate="{{ id }}{% if pair %},{{ id }}2{% endif %}" aria-label="{{ t('password.generate') }}" title="{{ t('password.generate') }}">{{ icon('wand') }}</button>{% endif %}
+      <button type="button" class="btn" data-toggle-password="{{ id }}" aria-label="{{ t('password.show') }}">{{ icon('eye') }}</button>
+    </div>
+  </div>
+  {% if match %}<span class="error-text hidden" id="{{ id }}-msg">{{ t('password.mismatch') }}</span>
+  {% else %}<div class="strength" data-strength="{{ id }}"><span></span></div>
+  <span class="hint"><span id="{{ id }}-label"></span>{{ hint }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro code_field(id, label) -%}
+<div class="field">
+  <label for="{{ id }}">{{ label }}</label>
+  <input class="code-input" type="text" id="{{ id }}" name="code" inputmode="numeric" autocomplete="one-time-code"
+         maxlength="6" pattern="[0-9]{6}" required>
+</div>
+{%- endmacro %}

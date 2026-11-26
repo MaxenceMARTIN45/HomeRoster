@@ -1,0 +1,7 @@
+# Only requirements.txt and src/ are needed by the image. Everything else stays out,
+# in particular secrets, local data and personal notes.
+*
+!requirements.txt
+!src/
+src/**/__pycache__
+src/**/*.pyc

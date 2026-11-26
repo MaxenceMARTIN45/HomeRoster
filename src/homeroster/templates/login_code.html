@@ -1,0 +1,17 @@
+{% extends "auth_base.html" %}
+{% from "_ui.html" import icon %}
+{% block title %}{{ t('auth.code_title') }}{% endblock %}
+{% block card %}
+<div class="card">
+  <h1>{{ t('auth.code_title') }}</h1>
+  <p class="lead">{{ t('auth.code_lead') }}</p>
+  {% if error %}<div class="flash error mt-16">{{ icon('alert') }}<span>{{ error }}</span></div>{% endif %}
+  <form method="post" action="/login/code" class="mt-16">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input class="code-input" type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
+           pattern="[0-9]{6}" maxlength="6" required autofocus aria-label="{{ t('auth.code_label') }}" data-autosubmit>
+    <button class="btn primary lg block mt-16" type="submit">{{ icon('shield') }}{{ t('common.confirm') }}</button>
+  </form>
+  <p class="center mt-16"><a href="/login" class="small">{{ t('auth.start_over') }}</a></p>
+</div>
+{% endblock %}

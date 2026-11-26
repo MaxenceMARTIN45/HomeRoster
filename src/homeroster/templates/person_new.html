@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, password_field, language_select %}
+{% block title %}{{ t('new.title') }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="title">
+    <h1>{{ t('new.title') }}</h1>
+    <p class="muted small">{{ t('new.lead') }}</p>
+  </div>
+</div>
+
+<form method="post" action="/people/new" autocomplete="off" novalidate>
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><h2>{{ t('new.person') }}</h2></div>
+      <div class="field">
+        <label for="display_name">{{ t('people.first_name') }}</label>
+        <input type="text" id="display_name" name="display_name" value="{{ form.display_name or '' }}" required maxlength="40"
+               autocapitalize="words" class="{{ 'invalid' if errors.display_name }}" placeholder="{{ t('new.name_placeholder') }}">
+        {% if errors.display_name %}<span class="error-text">{{ errors.display_name }}</span>{% endif %}
+      </div>
+      <div class="field">
+        <label for="email">{{ t('people.email') }}</label>
+        <input type="email" id="email" name="email" value="{{ form.email or '' }}" inputmode="email" autocapitalize="off"
+               class="{{ 'invalid' if errors.email }}" placeholder="{{ t('new.email_placeholder') }}">
+        {% if errors.email %}<span class="error-text">{{ errors.email }}</span>
+        {% else %}<span class="hint">{{ t('new.email_hint') }}</span>{% endif %}
+      </div>
+      <div class="field">
+        <label for="language">{{ t('people.language') }}</label>
+        {{ language_select('language', form.language or lang) }}
+        <span class="hint">{{ t('new.language_hint') }}</span>
+      </div>
+      <details class="more" {{ 'open' if errors.slug or errors.device }}>
+        <summary>{{ icon('edit', 'sm') }}{{ t('new.advanced') }}</summary>
+        <div class="field">
+          <label for="slug">{{ t('people.slug') }}</label>
+          <input type="text" id="slug" name="slug" value="{{ form.slug or '' }}" autocapitalize="off" spellcheck="false"
+                 class="{{ 'invalid' if errors.slug }}">
+          {% if errors.slug %}<span class="error-text">{{ errors.slug }}</span>{% endif %}
+        </div>
+        <div class="field">
+          <label for="device">{{ t('new.first_device') }}</label>
+          <input type="text" id="device" name="device" value="{{ form.device or default_device }}" autocapitalize="off" spellcheck="false"
+                 class="{{ 'invalid' if errors.device }}">
+          {% if errors.device %}<span class="error-text">{{ errors.device }}</span>{% endif %}
+        </div>
+      </details>
+      <p class="slug-preview mt-12">{{ icon('phone', 'sm') }}{{ t('new.device_preview') }} <code data-peer-preview>{{ t('new.slug_placeholder') }} - {{ default_device }}</code></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>{{ t('auth.password') }}</h2><p class="faint sub">{{ t('new.password_lead') }}</p></div>
+      </div>
+      {{ password_field('password', t('auth.password'), hint=t('password.min_user'), pair=True, required=False) }}
+      <div class="field">
+        <label for="password2">{{ t('password.confirm') }}</label>
+        <div class="input-group">
+          <input type="password" id="password2" name="password2" autocomplete="new-password" data-match="password">
+          <div class="addons"><button type="button" class="btn" data-toggle-password="password2" aria-label="{{ t('password.show') }}">{{ icon('eye') }}</button></div>
+        </div>
+        <span class="error-text hidden" id="password2-msg">{{ t('password.mismatch') }}</span>
+        {% if errors.password %}<span class="error-text">{{ errors.password }}</span>{% endif %}
+      </div>
+      <p class="hint mt-12">{{ t('new.password_hint') }}</p>
+    </div>
+  </div>
+
+  <div class="card mt-16">
+    {% set children = apps.values()|selectattr('parent')|list %}
+    <div class="card-head"><div><h2>{{ t('new.apps') }}</h2>
+      {% if children %}<p class="faint sub">{% for app in children %}{{ t('new.uses_account', app=app.label, parent=apps[app.parent].label) }} {% endfor %}</p>{% endif %}
+    </div></div>
+    {% if apps %}
+    <div class="app-toggles">
+      {% for app in apps.values() %}
+      {% set checked = (app.id in form.apps) if form.apps is defined else loop.index <= 2 %}
+      <label class="app-toggle t-{{ app.color }}">
+        <span class="app-icon">{{ icon(app.icon) }}</span>
+        <span class="meta"><span class="name">{{ app.label }}</span><br><span class="desc">{{ app.describe() }}</span></span>
+        <span class="switch"><input type="checkbox" name="app_{{ app.id }}" value="1" {{ 'checked' if checked }}><span class="track"></span></span>
+      </label>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted">{{ t('new.no_apps') }}</p>{% endif %}
+    <div class="mt-16">
+      <label class="check"><input type="checkbox" name="send_email" value="1" {{ 'checked' if (form.send_email if form.send_email is defined else True) }}>
+        {{ icon('mail', 'sm') }}{{ t('new.send_email') }}</label>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn primary lg block" type="submit">{{ icon('check') }}{{ t('new.submit') }}</button>
+  </div>
+</form>
+{% endblock %}
